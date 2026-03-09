@@ -25,7 +25,7 @@ body {
 
 .hero {
   background: var(--hero-bg);
-  padding: 24px 0 100px;
+  padding: 25px 0 100px;
   height: 915px;
 }
 .hero .container {
