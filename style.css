@@ -259,6 +259,11 @@ body.is-dragging {
   background: #e6e6e6;
   color: #111;
   font-size: 20px;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.load-more-btn:hover {
+  background: #f2f2f2;
 }
 
 /* CONTACT */
@@ -318,6 +323,11 @@ body.is-dragging {
   background: #173a2a;
   color: #fff;
   font-size: 20px;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.contact-btn:hover {
+  background: #2b664b;
 }
 
 @media (max-width: 768px) {
@@ -534,6 +544,11 @@ body.is-dragging {
   border: 0;
   padding: 0;
   cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.promo-dot:hover {
+  background: #ececec;
 }
 
 .promo-dot--active {
@@ -560,10 +575,19 @@ body.is-dragging {
   transition: box-shadow 120ms ease;
 }
 
+.promo-arrow:hover {
+  background: rgba(255, 255, 255, 0.85);
+}
+
 .promo-arrow img {
   width: 48px;
   height: 48px;
   display: block;
+  transition: filter 150ms ease;
+}
+
+.promo-arrow:hover img {
+  filter: brightness(1.12);
 }
 
 .promo-arrow:active,
