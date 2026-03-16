@@ -1,5 +1,14 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
+/* ---------------- SUPABASE ---------------- */
+
+const SUPABASE_URL = "https://vglbaobubaujvbqwdyvb.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_MjKF2P-22ePzCMlppBdvpQ_3K8NKvzQ";
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ---------------- HERO CARDS DRAG ---------------- */
+
 (() => {
   const viewport = document.querySelector(".hero__cards");
   if (!viewport) return;
@@ -41,6 +50,8 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
   document.addEventListener("mouseup", endDrag);
 })();
 
+/* ---------------- PROMO SLIDER ---------------- */
+
 (() => {
   const track = document.getElementById("promoTrack");
   const dotsWrap = document.getElementById("promoDots");
@@ -71,6 +82,7 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
   const goTo = (nextIndex, dir) => {
     if (isAnimating || nextIndex === current) return;
     if (nextIndex < 0 || nextIndex >= slidesCount) return;
+
     isAnimating = true;
 
     const prevIndex = current;
@@ -123,15 +135,6 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
     nextBtn.disabled = current === slidesCount - 1;
   };
 
-  const press = (btn, pressed) => btn.classList.toggle("is-pressed", pressed);
-  [prevBtn, nextBtn].forEach((btn) => {
-    btn.addEventListener("mousedown", () => press(btn, true));
-    btn.addEventListener("mouseup", () => press(btn, false));
-    btn.addEventListener("mouseleave", () => press(btn, false));
-    btn.addEventListener("touchstart", () => press(btn, true), { passive: true });
-    btn.addEventListener("touchend", () => press(btn, false));
-  });
-
   prepSlides();
   updateDisabled();
 
@@ -140,10 +143,9 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
   });
 })();
 
+/* ---------------- APARTMENTS LOADING ---------------- */
+
 (() => {
-  const SUPABASE_URL = "https://vglbaobubaujvbqwdyvb.supabase.co";
-  const SUPABASE_ANON_KEY = "sb_publishable_MjKF2P-22ePzCMlppBdvpQ_3K8NKvzQ";
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const grid = document.getElementById("apartmentsGrid");
   const loadMoreBtn = document.getElementById("loadMoreBtn");
   const loadMoreWrap = loadMoreBtn ? loadMoreBtn.parentElement : null;
@@ -154,9 +156,9 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
   let isLoading = false;
 
   const getPageSize = () => {
-    if (window.innerWidth >= 992) return 6; // 3 колонки * 2 ряда
-    if (window.innerWidth >= 768) return 4; // 2 колонки * 2 ряда
-    return 2; // 1 колонка * 2 ряда
+    if (window.innerWidth >= 992) return 6;
+    if (window.innerWidth >= 768) return 4;
+    return 2;
   };
 
   const formatPrice = (value) => {
@@ -277,23 +279,51 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
   if (loadMoreBtn) {
     loadMoreBtn.addEventListener("click", () => loadApartments(getPageSize()));
-    loadMoreBtn.addEventListener("mousedown", () => loadMoreBtn.classList.add("is-pressed"));
-    loadMoreBtn.addEventListener("mouseup", () => loadMoreBtn.classList.remove("is-pressed"));
-    loadMoreBtn.addEventListener("mouseleave", () => loadMoreBtn.classList.remove("is-pressed"));
-    loadMoreBtn.addEventListener(
-      "touchstart",
-      () => loadMoreBtn.classList.add("is-pressed"),
-      { passive: true }
-    );
-    loadMoreBtn.addEventListener("touchend", () => loadMoreBtn.classList.remove("is-pressed"));
-  }
-
-  if (loadMoreWrap) {
-    loadMoreWrap.classList.add("col-12");
-    loadMoreWrap.classList.add("d-flex");
-    loadMoreWrap.classList.add("justify-content-center");
-    grid.appendChild(loadMoreWrap);
   }
 
   loadApartments(3);
+})();
+
+/* ---------------- CONTACT FORM ---------------- */
+
+(() => {
+  const form = document.getElementById("contactForm");
+  if (!form) return;
+
+  const firstNameInput = document.getElementById("firstName");
+  const lastNameInput = document.getElementById("lastName");
+  const phoneInput = document.getElementById("phone");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const firstName = firstNameInput.value.trim();
+    const lastName = lastNameInput.value.trim();
+    const phone = phoneInput.value.trim();
+
+    if (!firstName || !phone) {
+      alert("Пожалуйста заполните имя и телефон");
+      return;
+    }
+
+    const { error } = await supabase
+      .from("site_clients_form")
+      .insert([
+        {
+          form_first_name: firstName,
+          form_last_name: lastName,
+          form_phone: phone
+        }
+      ]);
+
+    if (error) {
+      alert("Ошибка отправки");
+      console.error(error);
+      return;
+    }
+
+    alert("Спасибо! Мы скоро вам перезвоним.");
+
+    form.reset();
+  });
 })();
