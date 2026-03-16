@@ -1,4 +1,4 @@
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+﻿import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
 (() => {
   const viewport = document.querySelector(".hero__cards");
@@ -144,19 +144,27 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
   const SUPABASE_URL = "https://vglbaobubaujvbqwdyvb.supabase.co";
   const SUPABASE_ANON_KEY = "sb_publishable_MjKF2P-22ePzCMlppBdvpQ_3K8NKvzQ";
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
   const grid = document.getElementById("apartmentsGrid");
   const loadMoreBtn = document.getElementById("loadMoreBtn");
-  const loadMoreWrap = loadMoreBtn ? loadMoreBtn.parentElement : null;
+  const filtersForm = document.getElementById("listingsFilters");
+  const resetFiltersBtn = document.getElementById("resetFiltersBtn");
 
   if (!grid) return;
 
   let offset = 0;
   let isLoading = false;
+  let hasMore = true;
+  let activeFilters = {
+    rooms: "",
+    priceMin: null,
+    priceMax: null,
+  };
 
   const getPageSize = () => {
-    if (window.innerWidth >= 992) return 6; // 3 колонки * 2 ряда
-    if (window.innerWidth >= 768) return 4; // 2 колонки * 2 ряда
-    return 2; // 1 колонка * 2 ряда
+    if (window.innerWidth >= 992) return 6;
+    if (window.innerWidth >= 768) return 4;
+    return 2;
   };
 
   const formatPrice = (value) => {
@@ -176,6 +184,14 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
     return String(value);
   };
 
+  const escapeHtml = (value) =>
+    safeText(value)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
+
   const renderApartment = (apt) => {
     const col = document.createElement("div");
     col.className = "col-12 col-md-6 col-lg-4";
@@ -183,31 +199,21 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
     const rooms = safeText(apt.rooms, "—");
     const area = formatArea(apt.area);
     const floor = safeText(apt.floor, "—");
-    const metroName = safeText(apt.metro_name, "");
-    const metroMinutes = safeText(apt.metro_minutes, "");
     const price = formatPrice(apt.price);
     const address = safeText(apt.address, "");
     const photoUrl = safeText(apt.photo_url, "");
 
     col.innerHTML = `
       <article class="listing-card h-100">
-        <img class="listing-img" src="${photoUrl}" alt="Интерьер квартиры">
+        <img class="listing-img" src="${escapeHtml(photoUrl)}" alt="Интерьер квартиры">
         <div class="listing-body">
-          <div class="listing-price">${price}</div>
+          <div class="listing-price">${escapeHtml(price)}</div>
           <div class="listing-chips">
-            <span class="chip">${rooms} комн. кв.</span>
-            <span class="chip">${area}</span>
-            <span class="chip">${floor} этаж</span>
-            <span class="chip">
-              <img class="chip__icon" src="icons/метро.png" alt="">
-              ${metroName}
-            </span>
-            <span class="chip">
-              <img class="chip__icon" src="icons/бег.png" alt="">
-              ${metroMinutes} мин
-            </span>
+            <span class="chip">${escapeHtml(rooms)} комн. кв.</span>
+            <span class="chip">${escapeHtml(area)}</span>
+            <span class="chip">${escapeHtml(floor)} этаж</span>
           </div>
-          <div class="listing-address">${address}</div>
+          <div class="listing-address">${escapeHtml(address)}</div>
         </div>
       </article>
     `;
@@ -218,29 +224,66 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
   const showError = (message) => {
     grid.innerHTML = `
       <div class="col-12">
-        <p>Ошибка загрузки: ${message}</p>
+        <p>Ошибка загрузки: ${escapeHtml(message)}</p>
       </div>
     `;
     if (loadMoreBtn) loadMoreBtn.disabled = true;
   };
 
-  const loadApartments = async (pageSize) => {
-    if (isLoading) return;
-    isLoading = true;
-    if (loadMoreBtn) loadMoreBtn.disabled = true;
+  const updateLoadMoreState = () => {
+    if (!loadMoreBtn) return;
+    loadMoreBtn.disabled = isLoading || !hasMore;
+    loadMoreBtn.style.display = hasMore ? "inline-block" : "none";
+  };
 
-    const from = offset;
-    const to = offset + pageSize - 1;
-
-    const { data, error } = await supabase
+  const buildQuery = (from, to) => {
+    let query = supabase
       .from("apartments")
-      .select("photo_url, price, rooms, area, floor, metro_name, metro_minutes, address, created_at")
+      .select("photo_url, price, rooms, area, floor, address, created_at")
       .order("created_at", { ascending: false })
       .range(from, to);
+
+    if (activeFilters.rooms) {
+      if (activeFilters.rooms === "4") {
+        query = query.gte("rooms", 4);
+      } else {
+        query = query.eq("rooms", Number(activeFilters.rooms));
+      }
+    }
+
+    if (activeFilters.priceMin !== null) {
+      query = query.gte("price", activeFilters.priceMin);
+    }
+
+    if (activeFilters.priceMax !== null) {
+      query = query.lte("price", activeFilters.priceMax);
+    }
+
+    return query;
+  };
+
+  const loadApartments = async ({ reset = false } = {}) => {
+    if (isLoading) return;
+    if (!hasMore && !reset) return;
+
+    if (reset) {
+      offset = 0;
+      hasMore = true;
+      grid.innerHTML = "";
+    }
+
+    isLoading = true;
+    updateLoadMoreState();
+
+    const pageSize = getPageSize();
+    const from = offset;
+    const to = offset + pageSize - 1;
+    const { data, error } = await buildQuery(from, to);
 
     if (error) {
       showError(error.message || "Неизвестная ошибка");
       isLoading = false;
+      updateLoadMoreState();
       return;
     }
 
@@ -248,52 +291,79 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
       if (offset === 0) {
         grid.innerHTML = `
           <div class="col-12">
-            <p>Нет доступных квартир.</p>
+            <p>По выбранным фильтрам квартир не найдено.</p>
           </div>
         `;
       }
-      if (loadMoreBtn) loadMoreBtn.disabled = true;
+      hasMore = false;
       isLoading = false;
+      updateLoadMoreState();
       return;
     }
 
     data.forEach((apt) => grid.appendChild(renderApartment(apt)));
     offset += data.length;
+    hasMore = data.length === pageSize;
 
-    if (data.length < pageSize && loadMoreBtn) {
-      loadMoreBtn.disabled = true;
-    }
-
-    if (loadMoreWrap) {
-      loadMoreWrap.classList.add("col-12");
-      loadMoreWrap.classList.add("d-flex");
-      loadMoreWrap.classList.add("justify-content-center");
-      grid.appendChild(loadMoreWrap);
-    }
-
-    if (loadMoreBtn) loadMoreBtn.disabled = false;
     isLoading = false;
+    updateLoadMoreState();
+  };
+
+  const parseNumberInput = (value) => {
+    if (value === "" || value === null || value === undefined) return null;
+    const num = Number(value);
+    return Number.isFinite(num) ? num : null;
+  };
+
+  const applyFilters = () => {
+    if (!filtersForm) return;
+    const formData = new FormData(filtersForm);
+    const rooms = safeText(formData.get("rooms"), "").trim();
+    let priceMin = parseNumberInput(formData.get("priceMin"));
+    let priceMax = parseNumberInput(formData.get("priceMax"));
+
+    if (priceMin !== null && priceMax !== null && priceMin > priceMax) {
+      const temp = priceMin;
+      priceMin = priceMax;
+      priceMax = temp;
+    }
+
+    activeFilters = {
+      rooms,
+      priceMin,
+      priceMax,
+    };
   };
 
   if (loadMoreBtn) {
-    loadMoreBtn.addEventListener("click", () => loadApartments(getPageSize()));
+    loadMoreBtn.addEventListener("click", () => loadApartments());
     loadMoreBtn.addEventListener("mousedown", () => loadMoreBtn.classList.add("is-pressed"));
     loadMoreBtn.addEventListener("mouseup", () => loadMoreBtn.classList.remove("is-pressed"));
     loadMoreBtn.addEventListener("mouseleave", () => loadMoreBtn.classList.remove("is-pressed"));
-    loadMoreBtn.addEventListener(
-      "touchstart",
-      () => loadMoreBtn.classList.add("is-pressed"),
-      { passive: true }
-    );
+    loadMoreBtn.addEventListener("touchstart", () => loadMoreBtn.classList.add("is-pressed"), { passive: true });
     loadMoreBtn.addEventListener("touchend", () => loadMoreBtn.classList.remove("is-pressed"));
   }
 
-  if (loadMoreWrap) {
-    loadMoreWrap.classList.add("col-12");
-    loadMoreWrap.classList.add("d-flex");
-    loadMoreWrap.classList.add("justify-content-center");
-    grid.appendChild(loadMoreWrap);
+  if (filtersForm) {
+    filtersForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      applyFilters();
+      loadApartments({ reset: true });
+    });
   }
 
-  loadApartments(3);
+  if (resetFiltersBtn && filtersForm) {
+    resetFiltersBtn.addEventListener("click", () => {
+      filtersForm.reset();
+      activeFilters = {
+        rooms: "",
+        priceMin: null,
+        priceMax: null,
+      };
+      loadApartments({ reset: true });
+    });
+  }
+
+  updateLoadMoreState();
+  loadApartments({ reset: true });
 })();

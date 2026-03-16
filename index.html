@@ -183,6 +183,33 @@
     <div class="container">
       <h2 class="listings-section__title">АКТУАЛЬНЫЕ КВАРТИРЫ</h2>
 
+      <form class="listings-filters" id="listingsFilters">
+        <div class="row g-3 align-items-end">
+          <div class="col-12 col-md-6 col-lg-4">
+            <label class="listings-filters__label" for="filterRooms">Комнат</label>
+            <select class="form-select listings-filters__control" id="filterRooms" name="rooms">
+              <option value="">Любое</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4+</option>
+            </select>
+          </div>
+          <div class="col-12 col-md-6 col-lg-3">
+            <label class="listings-filters__label" for="filterPriceMin">Цена от</label>
+            <input class="form-control listings-filters__control" id="filterPriceMin" name="priceMin" type="number" min="0" step="100000" placeholder="0">
+          </div>
+          <div class="col-12 col-md-6 col-lg-3">
+            <label class="listings-filters__label" for="filterPriceMax">Цена до</label>
+            <input class="form-control listings-filters__control" id="filterPriceMax" name="priceMax" type="number" min="0" step="100000" placeholder="50000000">
+          </div>
+          <div class="col-12 col-lg-2 d-flex gap-2">
+            <button class="listings-filters__btn listings-filters__btn--apply" type="submit">Применить</button>
+            <button class="listings-filters__btn listings-filters__btn--reset" type="button" id="resetFiltersBtn">Сброс</button>
+          </div>
+        </div>
+      </form>
+
       <div class="row g-3 listings-grid" id="apartmentsGrid"></div>
 
       <div class="d-flex justify-content-center">
