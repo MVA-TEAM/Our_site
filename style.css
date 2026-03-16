@@ -21,6 +21,7 @@ body {
   font-family: "Manrope", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
   color: var(--text-light);
   background: #fff;
+  overflow-x: hidden;
 }
 
 .hero {
@@ -48,6 +49,16 @@ body {
   font-size: 20px;
   font-weight: 400;
   color: rgba(255, 255, 255, 0.92);
+}
+
+.hero__contact {
+  color: rgba(255, 255, 255, 0.92);
+  text-decoration: none;
+  transition: color 150ms ease;
+}
+
+.hero__contact:hover {
+  color: #89a495;
 }
 
 .hero__title {
@@ -104,18 +115,22 @@ body.is-dragging {
   background: #fff;
   border-radius: 16px;
   padding: 28px;
-  height: 240px;
+  height: 320px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
 }
 
 .about-card--tall {
-  height: 408px;
+  height: 320px;
 }
 
 .about-card--small {
-  height: 192px;
+  height: 320px;
+}
+
+.about-card--feature {
+  height: 320px;
 }
 
 .about-card__number {
@@ -155,7 +170,8 @@ body.is-dragging {
 
   .about-card,
   .about-card--tall,
-  .about-card--small {
+  .about-card--small,
+  .about-card--feature {
     height: auto;
   }
 
@@ -421,6 +437,15 @@ body.is-dragging {
   text-decoration: none;
   display: block;
   margin-bottom: 8px;
+  transition: color 150ms ease;
+}
+
+.footer-link:hover {
+  color: #89a495;
+}
+
+.footer-link--address span {
+  display: block;
 }
 
 .footer-bottom {
