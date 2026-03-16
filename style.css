@@ -27,7 +27,8 @@ body {
 .hero {
   background: var(--hero-bg);
   padding: 25px 0 100px;
-  height: 915px;
+  min-height: 915px;
+  height: auto;
 }
 .hero .container {
   max-width: 1440px;
