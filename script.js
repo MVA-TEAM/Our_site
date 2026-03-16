@@ -1,13 +1,8 @@
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-
-/* ---------------- SUPABASE ---------------- */
+﻿import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
 const SUPABASE_URL = "https://vglbaobubaujvbqwdyvb.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_MjKF2P-22ePzCMlppBdvpQ_3K8NKvzQ";
-
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-/* ---------------- HERO CARDS DRAG ---------------- */
 
 (() => {
   const viewport = document.querySelector(".hero__cards");
@@ -49,8 +44,6 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   document.addEventListener("mousemove", (e) => moveDrag(e.clientX));
   document.addEventListener("mouseup", endDrag);
 })();
-
-/* ---------------- PROMO SLIDER ---------------- */
 
 (() => {
   const track = document.getElementById("promoTrack");
@@ -143,23 +136,40 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   });
 })();
 
-/* ---------------- APARTMENTS LOADING ---------------- */
-
 (() => {
   const grid = document.getElementById("apartmentsGrid");
   const loadMoreBtn = document.getElementById("loadMoreBtn");
-  const loadMoreWrap = loadMoreBtn ? loadMoreBtn.parentElement : null;
+  const filtersForm = document.getElementById("listingsFilters");
+  const resetFiltersBtn = document.getElementById("resetFiltersBtn");
 
   if (!grid) return;
 
   let offset = 0;
   let isLoading = false;
+  let hasMore = true;
+  let activeFilters = {
+    rooms: "",
+    metro: "",
+  };
 
   const getPageSize = () => {
     if (window.innerWidth >= 992) return 6;
     if (window.innerWidth >= 768) return 4;
     return 2;
   };
+
+  const safeText = (value, fallback = "") => {
+    if (value === null || value === undefined) return fallback;
+    return String(value);
+  };
+
+  const escapeHtml = (value) =>
+    safeText(value)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
 
   const formatPrice = (value) => {
     const num = Number(value);
@@ -171,11 +181,6 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const num = Number(value);
     if (!Number.isFinite(num)) return "";
     return `${num.toLocaleString("ru-RU", { maximumFractionDigits: 2 })} м²`;
-  };
-
-  const safeText = (value, fallback = "") => {
-    if (value === null || value === undefined) return fallback;
-    return String(value);
   };
 
   const renderApartment = (apt) => {
@@ -193,23 +198,23 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     col.innerHTML = `
       <article class="listing-card h-100">
-        <img class="listing-img" src="${photoUrl}" alt="Интерьер квартиры">
+        <img class="listing-img" src="${escapeHtml(photoUrl)}" alt="Интерьер квартиры">
         <div class="listing-body">
-          <div class="listing-price">${price}</div>
+          <div class="listing-price">${escapeHtml(price)}</div>
           <div class="listing-chips">
-            <span class="chip">${rooms} комн. кв.</span>
-            <span class="chip">${area}</span>
-            <span class="chip">${floor} этаж</span>
+            <span class="chip">${escapeHtml(rooms)} комн. кв.</span>
+            <span class="chip">${escapeHtml(area)}</span>
+            <span class="chip">${escapeHtml(floor)} этаж</span>
             <span class="chip">
               <img class="chip__icon" src="icons/метро.png" alt="">
-              ${metroName}
+              ${escapeHtml(metroName)}
             </span>
             <span class="chip">
               <img class="chip__icon" src="icons/бег.png" alt="">
-              ${metroMinutes} мин
+              ${escapeHtml(metroMinutes)} мин
             </span>
           </div>
-          <div class="listing-address">${address}</div>
+          <div class="listing-address">${escapeHtml(address)}</div>
         </div>
       </article>
     `;
@@ -220,29 +225,63 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const showError = (message) => {
     grid.innerHTML = `
       <div class="col-12">
-        <p>Ошибка загрузки: ${message}</p>
+        <p>Ошибка загрузки: ${escapeHtml(message)}</p>
       </div>
     `;
     if (loadMoreBtn) loadMoreBtn.disabled = true;
   };
 
-  const loadApartments = async (pageSize) => {
-    if (isLoading) return;
-    isLoading = true;
-    if (loadMoreBtn) loadMoreBtn.disabled = true;
+  const updateLoadMoreState = () => {
+    if (!loadMoreBtn) return;
+    loadMoreBtn.disabled = isLoading || !hasMore;
+    loadMoreBtn.style.display = hasMore ? "inline-block" : "none";
+  };
 
-    const from = offset;
-    const to = offset + pageSize - 1;
-
-    const { data, error } = await supabase
+  const buildQuery = (from, to) => {
+    let query = supabase
       .from("apartments")
       .select("photo_url, price, rooms, area, floor, metro_name, metro_minutes, address, created_at")
       .order("created_at", { ascending: false })
       .range(from, to);
 
+    if (activeFilters.rooms) {
+      if (activeFilters.rooms === "4") {
+        query = query.gte("rooms", 4);
+      } else {
+        query = query.eq("rooms", Number(activeFilters.rooms));
+      }
+    }
+
+    if (activeFilters.metro) {
+      query = query.ilike("metro_name", `%${activeFilters.metro}%`);
+    }
+
+    return query;
+  };
+
+  const loadApartments = async ({ reset = false } = {}) => {
+    if (isLoading) return;
+    if (!hasMore && !reset) return;
+
+    if (reset) {
+      offset = 0;
+      hasMore = true;
+      grid.innerHTML = "";
+    }
+
+    isLoading = true;
+    updateLoadMoreState();
+
+    const pageSize = getPageSize();
+    const from = offset;
+    const to = offset + pageSize - 1;
+
+    const { data, error } = await buildQuery(from, to);
+
     if (error) {
       showError(error.message || "Неизвестная ошибка");
       isLoading = false;
+      updateLoadMoreState();
       return;
     }
 
@@ -250,41 +289,63 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       if (offset === 0) {
         grid.innerHTML = `
           <div class="col-12">
-            <p>Нет доступных квартир.</p>
+            <p>По выбранным фильтрам квартир не найдено.</p>
           </div>
         `;
       }
-      if (loadMoreBtn) loadMoreBtn.disabled = true;
+      hasMore = false;
       isLoading = false;
+      updateLoadMoreState();
       return;
     }
 
     data.forEach((apt) => grid.appendChild(renderApartment(apt)));
     offset += data.length;
+    hasMore = data.length === pageSize;
 
-    if (data.length < pageSize && loadMoreBtn) {
-      loadMoreBtn.disabled = true;
-    }
-
-    if (loadMoreWrap) {
-      loadMoreWrap.classList.add("col-12");
-      loadMoreWrap.classList.add("d-flex");
-      loadMoreWrap.classList.add("justify-content-center");
-      grid.appendChild(loadMoreWrap);
-    }
-
-    if (loadMoreBtn) loadMoreBtn.disabled = false;
     isLoading = false;
+    updateLoadMoreState();
+  };
+
+  const applyFilters = () => {
+    if (!filtersForm) return;
+
+    const formData = new FormData(filtersForm);
+    const rooms = safeText(formData.get("rooms")).trim();
+    const metro = safeText(formData.get("metro")).trim();
+
+    activeFilters = {
+      rooms,
+      metro,
+    };
   };
 
   if (loadMoreBtn) {
-    loadMoreBtn.addEventListener("click", () => loadApartments(getPageSize()));
+    loadMoreBtn.addEventListener("click", () => loadApartments());
   }
 
-  loadApartments(3);
-})();
+  if (filtersForm) {
+    filtersForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      applyFilters();
+      loadApartments({ reset: true });
+    });
+  }
 
-/* ---------------- CONTACT FORM ---------------- */
+  if (resetFiltersBtn && filtersForm) {
+    resetFiltersBtn.addEventListener("click", () => {
+      filtersForm.reset();
+      activeFilters = {
+        rooms: "",
+        metro: "",
+      };
+      loadApartments({ reset: true });
+    });
+  }
+
+  updateLoadMoreState();
+  loadApartments({ reset: true });
+})();
 
 (() => {
   const form = document.getElementById("contactForm");
@@ -302,19 +363,17 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const phone = phoneInput.value.trim();
 
     if (!firstName || !phone) {
-      alert("Пожалуйста заполните имя и телефон");
+      alert("Пожалуйста, заполните имя и телефон");
       return;
     }
 
-    const { error } = await supabase
-      .from("site_clients_form")
-      .insert([
-        {
-          form_first_name: firstName,
-          form_last_name: lastName,
-          form_phone: phone
-        }
-      ]);
+    const { error } = await supabase.from("site_clients_form").insert([
+      {
+        form_first_name: firstName,
+        form_last_name: lastName,
+        form_phone: phone,
+      },
+    ]);
 
     if (error) {
       alert("Ошибка отправки");
@@ -323,7 +382,6 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
 
     alert("Спасибо! Мы скоро вам перезвоним.");
-
     form.reset();
   });
 })();

@@ -202,6 +202,60 @@ body.is-dragging {
   color: #111;
 }
 
+.listings-filters {
+  margin-bottom: 24px;
+}
+
+.listings-filters__label {
+  display: block;
+  margin-bottom: 8px;
+  color: #222;
+  font-size: 16px;
+}
+
+.listings-filters__control {
+  height: 52px;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+  background: #fff;
+  color: #111;
+  font-size: 16px;
+}
+
+.listings-filters__control:focus {
+  border-color: #173a2a;
+  box-shadow: 0 0 0 0.2rem rgba(23, 58, 42, 0.18);
+}
+
+.listings-filters__btn {
+  flex: 0 0 auto;
+  min-width: 110px;
+  padding: 0 16px;
+  height: 52px;
+  border-radius: 12px;
+  border: 0;
+  font-size: 16px;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.listings-filters__btn--apply {
+  background: #173a2a;
+  color: #fff;
+}
+
+.listings-filters__btn--apply:hover {
+  background: #24533d;
+}
+
+.listings-filters__btn--reset {
+  background: #e8e8e8;
+  color: #111;
+}
+
+.listings-filters__btn--reset:hover {
+  background: #dcdcdc;
+}
+
 .listing-card {
   background: #fff;
   border-radius: 20px;
