@@ -744,13 +744,13 @@ body {
 .hero-card__title {
   margin: 0;
   font-family: "Anticva", "Times New Roman", serif;
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 400;
-  line-height: 1.05;
+  line-height: 1.1;
   text-transform: uppercase;
   color: var(--text-light);
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 .hero-card__text {
