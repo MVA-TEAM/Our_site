@@ -72,28 +72,9 @@ body {
 
 .hero__cards {
   margin-top: 80px;
-  width: 100vw;
-  margin-left: calc(50% - 50vw);
-  margin-right: calc(50% - 50vw);
-  padding: 0 0 4px;
-  overflow-x: scroll;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  cursor: grab;
-  touch-action: pan-y;
-  user-select: none;
-}
-
-.hero__cards::-webkit-scrollbar { display: none; }
-
-.hero__cards.is-dragging {
-  cursor: grabbing;
-  user-select: none;
-}
-
-body.is-dragging {
-  cursor: grabbing;
-  user-select: none;
+  width: 100%;
+  padding: 0;
+  overflow: visible;
 }
 
 /* ABOUT */
@@ -740,22 +721,22 @@ body.is-dragging {
 }
 
 .hero__cards-track {
-  display: flex;
+  display: grid;
   gap: 16px;
-  width: max-content;
-  padding-left: max(var(--container-pad), calc((100vw - var(--container-max)) / 2 + var(--container-pad)));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  width: 100%;
+  padding-left: 0;
 }
 
 .hero-card {
-  width: 416px;
-  height: 340px;
+  width: 100%;
+  height: 330px;
   border-radius: 16px;
   padding: 24px;
   background: var(--hero-card);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  flex: 0 0 auto;
 }
 
 .hero-card__title {
@@ -782,6 +763,10 @@ body.is-dragging {
   .hero__contacts {
     gap: 12px;
   }
+
+  .hero__cards-track {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 768px) {
@@ -797,8 +782,11 @@ body.is-dragging {
     font-size: 16px;
   }
 
+  .hero__cards-track {
+    grid-template-columns: 1fr;
+  }
+
   .hero-card {
-    width: 300px;
     height: auto;
     min-height: 280px;
   }
