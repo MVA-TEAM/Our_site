@@ -56,6 +56,40 @@ body {
   color: rgba(255, 255, 255, 0.92);
   text-decoration: none;
   transition: color 150ms ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hero__contact-icon {
+  display: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  align-items: center;
+  justify-content: center;
+}
+
+.hero__contact-icon svg {
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .brand__logo {
+    height: 44px;
+  }
+
+  .hero__topbar {
+    flex-wrap: nowrap;
+    gap: 16px;
+  }
+
+  .hero__contacts {
+    flex-wrap: nowrap;
+    gap: 8px;
+    margin-left: auto;
+  }
 }
 
 .hero__contact:hover {
@@ -455,6 +489,10 @@ body {
   display: block;
 }
 
+.footer-logo {
+  margin-bottom: 24px;
+}
+
 .footer-cols {
   row-gap: 24px;
 }
@@ -499,6 +537,48 @@ body {
   }
 }
 
+@media (max-width: 768px) {
+  .site-footer {
+    padding: 40px 0 32px;
+  }
+
+  .footer-logo img {
+    height: 44px;
+  }
+
+  .footer-logo {
+    margin-bottom: 20px;
+  }
+
+  .footer-cols {
+    row-gap: 16px;
+  }
+
+  .footer-title {
+    font-size: 16px;
+    margin-bottom: 8px;
+  }
+
+  .footer-link,
+  .footer-text {
+    font-size: 16px;
+    margin-bottom: 6px;
+  }
+
+  .footer-bottom {
+    margin-top: 48px;
+  }
+
+  .footer-bottom__text {
+    font-size: 14px;
+  }
+
+  .office-section {
+    padding-bottom: 40px;
+    min-height: 920px;
+  }
+}
+
 /* PROMOS */
 .promos {
   background: #f7f6f2;
@@ -518,11 +598,13 @@ body {
   background: #fff;
   border-radius: 16px;
   padding: 28px;
-  width: 1336px;
-  height: 408px;
+  width: 100%;
+  max-width: 1336px;
+  height: clamp(300px, calc(8.85vw + 238px), 408px);
   position: relative;
   box-shadow: none;
   overflow: hidden;
+  margin: 0 auto;
 }
 
 .promo-track {
@@ -554,7 +636,7 @@ body {
 
 .promo-card__title {
   margin: 0;
-  font-size: 32px;
+  font-size: clamp(22px, 2.6vw, 32px);
   font-weight: 500;
   letter-spacing: -0.01em;
   color: #111;
@@ -566,9 +648,10 @@ body {
 
 .promo-card__note {
   margin: 0;
-  font-size: 18px;
+  font-size: clamp(14px, 1.6vw, 18px);
   color: #555;
   text-align: right;
+  text-wrap: balance;
 }
 
 .promo-card__image {
@@ -579,6 +662,7 @@ body {
   background: transparent;
   display: flex;
   align-items: flex-end;
+  align-self: stretch;
 }
 
 .promo-card__image img {
@@ -587,6 +671,7 @@ body {
   max-height: 100%;
   object-fit: contain;
   object-position: center bottom;
+  transform-origin: center bottom;
 }
 
 .promo-dots {
@@ -659,31 +744,170 @@ body {
 @media (max-width: 992px) {
   .promo-card {
     width: 100%;
-    height: auto;
+    min-height: 0;
+  }
+}
+
+@media (max-width: 1200px) and (min-width: 701px) {
+  .promo-card__row {
+    height: 100%;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: stretch;
+  }
+
+  .promo-card__row > [class*="col-"] {
+    flex: 0 0 33.333%;
+    max-width: 33.333%;
   }
 
   .promo-card__image {
-    width: min(420px, 100%);
+    width: clamp(240px, 38vw, 520px);
+    margin-right: -40px;
+    margin-top: 58px;
+    margin-bottom: -54px;
+  }
+
+  .promo-card__row > [class*="col-"]:nth-child(3) {
+    align-self: flex-start;
+    position: relative;
+    z-index: 2;
   }
 
   .promo-card__note {
-    text-align: left;
+    text-align: right;
+  }
+
+  .promo-dots,
+  .promo-arrows {
+    z-index: 3;
+  }
+}
+
+@media (max-width: 990px) and (min-width: 701px) {
+  .promo-card__image {
+    margin-top: 58px;
+    margin-bottom: -54px;
   }
 }
 
 @media (max-width: 768px) {
+  .promos {
+    padding-top: 112px;
+    padding-bottom: 112px;
+  }
+
+  .promo-card__nav {
+    margin-top: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero__contact {
+    width: 40px;
+    height: 40px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .hero__contact-text {
+    display: none;
+  }
+
+  .hero__contact-icon {
+    display: inline-flex;
+  }
+}
+
+.form-success {
+  text-align: center;
+  padding: 32px 16px 8px;
+}
+
+.form-success__icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 2px solid #112c20;
+  margin: 0 auto 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.form-success__icon::before {
+  content: "";
+  width: 26px;
+  height: 14px;
+  border-left: 3px solid #112c20;
+  border-bottom: 3px solid #112c20;
+  transform: rotate(-45deg);
+  display: block;
+  margin-top: -4px;
+}
+
+.form-success__text {
+  font-size: 20px;
+  color: #112c20;
+  margin: 0;
+}
+
+@media (max-width: 700px) {
   .promo-card {
-    padding: 20px;
+    padding: 20px 20px 0;
+    height: clamp(360px, calc(41.2vw + 212px), 500px);
+    min-height: 360px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    row-gap: 16px;
   }
 
   .promo-card__row {
     height: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .promo-card__row > [class*="col-"] {
+    width: 100%;
+    max-width: 100%;
+    flex: none;
+  }
+
+  .promo-card__row > [class*="col-"]:first-child {
+    order: 1;
+  }
+
+  .promo-card__row > [class*="col-"]:nth-child(3) {
+    order: 2;
+    margin-top: 16px;
+  }
+
+  .promo-card__row > [class*="col-"]:nth-child(2) {
+    order: 3;
+    margin-top: 16px;
+  }
+
+  .promo-card__title {
+    font-size: 24px;
+    line-height: 1.15;
+  }
+
+  .promo-card__note {
+    font-size: clamp(14px, 3.5vw, 16px);
+    text-align: left;
+    margin-top: 0;
   }
 
   .promo-card__image {
-    width: 100%;
+    width: calc(100% + 40px);
     height: auto;
-    margin-right: 0;
+    margin-right: -20px;
+    margin-left: -20px;
+    margin-top: 8px;
+    border-radius: 0;
   }
 
   .promo-card__image img {
@@ -693,31 +917,28 @@ body {
   }
 
   .promo-dots {
-    left: 20px;
-    bottom: 20px;
+    position: static;
+    grid-column: 1 / 2;
+    grid-row: 2 / 3;
+    justify-content: flex-start;
+    position: relative;
+    z-index: 2;
   }
 
   .promo-arrows {
-    right: 20px;
-    bottom: 20px;
+    position: static;
+    grid-column: 2 / 3;
+    grid-row: 2 / 3;
+    justify-content: flex-end;
+    margin-top: -10px;
+    position: relative;
+    z-index: 2;
   }
 
-  .promo-arrow {
-    width: 44px;
-    height: 44px;
-  }
-
-  .promo-arrow img {
-    width: 44px;
-    height: 44px;
-  }
-
-  .promo-card {
-    padding: 28px;
-  }
-
-  .promo-card__nav {
-    margin-top: 24px;
+  .promo-track {
+    grid-column: 1 / -1;
+    grid-row: 1 / 2;
+    z-index: 1;
   }
 }
 

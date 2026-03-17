@@ -141,6 +141,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const loadMoreBtn = document.getElementById("loadMoreBtn");
   const filtersForm = document.getElementById("listingsFilters");
   const resetFiltersBtn = document.getElementById("resetFiltersBtn");
+  const metroSelect = document.getElementById("filterMetro");
 
   if (!grid) return;
 
@@ -345,6 +346,32 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   updateLoadMoreState();
   loadApartments({ reset: true });
+
+  const loadMetros = async () => {
+    if (!metroSelect) return;
+    const { data, error } = await supabase
+      .from("apartments")
+      .select("metro_name")
+      .order("metro_name", { ascending: true });
+
+    if (error || !data) return;
+    const unique = Array.from(
+      new Set(
+        data
+          .map((row) => safeText(row.metro_name, "").trim())
+          .filter((name) => name.length > 0)
+      )
+    );
+
+    unique.forEach((name) => {
+      const option = document.createElement("option");
+      option.value = name;
+      option.textContent = name;
+      metroSelect.appendChild(option);
+    });
+  };
+
+  loadMetros();
 })();
 
 (() => {
@@ -355,15 +382,47 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const lastNameInput = document.getElementById("lastName");
   const phoneInput = document.getElementById("phone");
 
+  const normalizeName = (value) => value.replace(/[0-9]/g, "").trim();
+  const normalizePhone = (value) => value.replace(/\D/g, "").trim();
+  const isNameValid = (value) => /^[A-Za-zА-Яа-яЁё\s-]+$/.test(value);
+
+  if (firstNameInput) {
+    firstNameInput.addEventListener("input", () => {
+      firstNameInput.value = normalizeName(firstNameInput.value);
+    });
+  }
+
+  if (lastNameInput) {
+    lastNameInput.addEventListener("input", () => {
+      lastNameInput.value = normalizeName(lastNameInput.value);
+    });
+  }
+
+  if (phoneInput) {
+    phoneInput.addEventListener("input", () => {
+      phoneInput.value = normalizePhone(phoneInput.value);
+    });
+  }
+
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const firstName = firstNameInput.value.trim();
-    const lastName = lastNameInput.value.trim();
-    const phone = phoneInput.value.trim();
+    const firstName = normalizeName(firstNameInput.value);
+    const lastName = normalizeName(lastNameInput.value);
+    const phone = normalizePhone(phoneInput.value);
 
     if (!firstName || !phone) {
       alert("Пожалуйста, заполните имя и телефон");
+      return;
+    }
+
+    if (!isNameValid(firstName) || (lastName && !isNameValid(lastName))) {
+      alert("Имя и фамилия должны содержать только буквы");
+      return;
+    }
+
+    if (!/^\d{10,15}$/.test(phone)) {
+      alert("Введите корректный номер телефона");
       return;
     }
 
@@ -381,7 +440,11 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       return;
     }
 
-    alert("Спасибо! Мы скоро вам перезвоним.");
-    form.reset();
+    form.innerHTML = `
+      <div class="form-success">
+        <div class="form-success__icon" aria-hidden="true"></div>
+        <p class="form-success__text">Спасибо за заявку, скоро вам перезвоним.</p>
+      </div>
+    `;
   });
 })();
