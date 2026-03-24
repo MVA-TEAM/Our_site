@@ -112,6 +112,10 @@ body {
     height: clamp(22px, 7vw, 30px);
   }
 
+  .footer-logo img {
+    height: clamp(28px, 8vw, 44px);
+  }
+
   .hero__title {
     font-size: clamp(26px, 8vw, 40px);
   }
@@ -119,8 +123,32 @@ body {
   .promos__title,
   .about-section__title,
   .listings-section__title,
-  .office-section__title {
+  .office-section__title,
+  .contact-card__title {
     font-size: clamp(16px, 6vw, 20px);
+  }
+
+  .contact-card__text {
+    font-size: 18px;
+    color: #444;
+  }
+
+  .listing-address {
+    font-size: clamp(12px, 4vw, 16px);
+  }
+
+  .contact-input {
+    height: 48px;
+    font-size: 16px;
+  }
+
+  .contact-btn {
+    height: 48px;
+    font-size: 16px;
+  }
+
+  .promo-arrows {
+    display: none;
   }
 
   .hero__topbar {
@@ -413,7 +441,8 @@ body {
 
 .contact-card {
   width: 632px;
-  height: 524px;
+  height: auto;
+  min-height: 524px;
   background: #fff;
   border-radius: 24px;
   padding: 28px;
@@ -423,7 +452,7 @@ body {
 .contact-card__title {
   margin: 0;
   font-family: "Anticva", "Times New Roman", serif;
-  font-size: 40px;
+  font-size: 56px;
   text-transform: uppercase;
   color: #111;
 }
@@ -444,6 +473,22 @@ body {
   background: #f3f3f3;
   border: 1px solid #eaeaea;
   font-size: 20px;
+}
+
+.contact-input.is-invalid {
+  border-color: #d64545;
+  box-shadow: 0 0 0 2px rgba(214, 69, 69, 0.15);
+}
+
+.input-error {
+  display: none;
+  margin-top: 6px;
+  font-size: 14px;
+  color: #d64545;
+}
+
+.input-error.is-visible {
+  display: block;
 }
 
 .contact-input::placeholder {
@@ -714,6 +759,7 @@ body {
   align-self: stretch;
 }
 
+
 .promo-card__image img {
   width: 100%;
   height: auto;
@@ -721,6 +767,7 @@ body {
   object-fit: contain;
   object-position: center bottom;
   transform-origin: center bottom;
+  pointer-events: none;
 }
 
 .promo-dots {
@@ -813,8 +860,8 @@ body {
   .promo-card__image {
     width: clamp(240px, 38vw, 520px);
     margin-right: -40px;
-    margin-top: 58px;
-    margin-bottom: -54px;
+    margin-top: 68px;
+    margin-bottom: -20px;
   }
 
   .promo-card__row > [class*="col-"]:nth-child(3) {
@@ -990,16 +1037,13 @@ body {
     justify-content: flex-start;
     position: relative;
     z-index: 2;
+    align-self: flex-start;
+    margin-left: 0;
+    padding-left: 0;
   }
 
   .promo-arrows {
-    position: static;
-    grid-column: 2 / 3;
-    grid-row: 2 / 3;
-    justify-content: flex-end;
-    margin-top: -10px;
-    position: relative;
-    z-index: 2;
+    display: none;
   }
 
   .promo-track {
@@ -1007,6 +1051,7 @@ body {
     grid-row: 1 / 2;
     z-index: 1;
   }
+
 }
 
 .hero__cards-track {
@@ -1176,5 +1221,15 @@ body {
 
   .hero__contacts {
     gap: 6px;
+  }
+}
+
+@media (max-width: 450px) {
+  .promos__title,
+  .about-section__title,
+  .listings-section__title,
+  .office-section__title,
+  .contact-card__title {
+    font-size: clamp(26px, 8vw, 40px);
   }
 }

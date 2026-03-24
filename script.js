@@ -58,6 +58,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const slidesCount = slides.length;
   let current = 0;
   let isAnimating = false;
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let isTouching = false;
 
   const setDot = () => {
     dots.forEach((d, i) => d.classList.toggle("promo-dot--active", i === current));
@@ -134,6 +137,32 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   requestAnimationFrame(() => {
     track.classList.remove("is-init");
   });
+
+  track.addEventListener(
+    "touchstart",
+    (e) => {
+      if (e.touches.length !== 1) return;
+      isTouching = true;
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    },
+    { passive: true }
+  );
+
+  track.addEventListener(
+    "touchend",
+    (e) => {
+      if (!isTouching) return;
+      isTouching = false;
+      if (!e.changedTouches || e.changedTouches.length === 0) return;
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      const dy = e.changedTouches[0].clientY - touchStartY;
+      if (Math.abs(dx) <= Math.abs(dy) || Math.abs(dx) < 40) return;
+      if (dx < 0) goTo(current + 1, "next");
+      else goTo(current - 1, "prev");
+    },
+    { passive: true }
+  );
 })();
 
 (() => {
@@ -382,26 +411,90 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const lastNameInput = document.getElementById("lastName");
   const phoneInput = document.getElementById("phone");
 
-  const normalizeName = (value) => value.replace(/[0-9]/g, "").trim();
+  const normalizeName = (value) => value.trim();
   const normalizePhone = (value) => value.replace(/\D/g, "").trim();
-  const isNameValid = (value) => /^[A-Za-zА-Яа-яЁё\s-]+$/.test(value);
+  const namePattern = /^[A-Za-zА-Яа-яЁё\s-]+$/;
+
+  const setError = (input, message) => {
+    if (!input) return;
+    const errorEl = input.nextElementSibling && input.nextElementSibling.classList.contains("input-error")
+      ? input.nextElementSibling
+      : null;
+    input.classList.add("is-invalid");
+    if (errorEl) {
+      errorEl.textContent = message;
+      errorEl.classList.add("is-visible");
+    }
+  };
+
+  const clearError = (input) => {
+    if (!input) return;
+    const errorEl = input.nextElementSibling && input.nextElementSibling.classList.contains("input-error")
+      ? input.nextElementSibling
+      : null;
+    input.classList.remove("is-invalid");
+    if (errorEl) {
+      errorEl.textContent = "";
+      errorEl.classList.remove("is-visible");
+    }
+  };
+
+  const validateNameField = (input) => {
+    const value = normalizeName(input.value);
+    if (!value) {
+      setError(input, "Заполните поле");
+      return false;
+    }
+    if (!namePattern.test(value)) {
+      setError(input, "Данное поле может содержать буквы латинского алфавита и кириллицы");
+      return false;
+    }
+    clearError(input);
+    return true;
+  };
+
+  const validatePhoneField = (input) => {
+    const value = normalizePhone(input.value);
+    if (!value) {
+      setError(input, "Заполните поле");
+      return false;
+    }
+    if (!/^\d+$/.test(value)) {
+      setError(input, "Данное поле может содержать только цифры");
+      return false;
+    }
+    clearError(input);
+    return true;
+  };
 
   if (firstNameInput) {
     firstNameInput.addEventListener("input", () => {
       firstNameInput.value = normalizeName(firstNameInput.value);
+      if (firstNameInput.classList.contains("is-invalid")) {
+        validateNameField(firstNameInput);
+      }
     });
+    firstNameInput.addEventListener("blur", () => validateNameField(firstNameInput));
   }
 
   if (lastNameInput) {
     lastNameInput.addEventListener("input", () => {
       lastNameInput.value = normalizeName(lastNameInput.value);
+      if (lastNameInput.classList.contains("is-invalid")) {
+        validateNameField(lastNameInput);
+      }
     });
+    lastNameInput.addEventListener("blur", () => validateNameField(lastNameInput));
   }
 
   if (phoneInput) {
     phoneInput.addEventListener("input", () => {
       phoneInput.value = normalizePhone(phoneInput.value);
+      if (phoneInput.classList.contains("is-invalid")) {
+        validatePhoneField(phoneInput);
+      }
     });
+    phoneInput.addEventListener("blur", () => validatePhoneField(phoneInput));
   }
 
   form.addEventListener("submit", async (e) => {
@@ -411,20 +504,11 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const lastName = normalizeName(lastNameInput.value);
     const phone = normalizePhone(phoneInput.value);
 
-    if (!firstName || !phone) {
-      alert("Пожалуйста, заполните имя и телефон");
-      return;
-    }
+    const isFirstValid = validateNameField(firstNameInput);
+    const isLastValid = lastNameInput ? validateNameField(lastNameInput) : true;
+    const isPhoneValid = validatePhoneField(phoneInput);
 
-    if (!isNameValid(firstName) || (lastName && !isNameValid(lastName))) {
-      alert("Имя и фамилия должны содержать только буквы");
-      return;
-    }
-
-    if (!/^\d{10,15}$/.test(phone)) {
-      alert("Введите корректный номер телефона");
-      return;
-    }
+    if (!isFirstValid || !isLastValid || !isPhoneValid) return;
 
     const { error } = await supabase.from("site_clients_form").insert([
       {
