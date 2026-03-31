@@ -215,27 +215,32 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   };
 
   const renderApartment = (apt) => {
-    const col = document.createElement("div");
-    col.className = "col-12 col-md-6 col-lg-4";
+  const col = document.createElement("div");
+  col.className = "col-12 col-md-6 col-lg-4";
 
-    col.innerHTML = `
-      <article class="listing-card h-100">
-        <img class="listing-img" src="${escapeHtml(apt.photo_url)}">
-        <div class="listing-body">
-          <div class="listing-price">${formatPrice(apt.price)}</div>
-          <div class="listing-chips">
-            <span class="chip">${apt.rooms} комн.</span>
-            <span class="chip">${formatArea(apt.area)}</span>
-            <span class="chip">${apt.floor} этаж</span>
-            <span class="chip">${apt.metro_name}</span>
-            <span class="chip">${apt.metro_minutes} мин</span>
-          </div>
-          <div class="listing-address">${escapeHtml(apt.address)}</div>
+  const imageUrl = supabase
+    .storage
+    .from("apartments_ph")
+    .getPublicUrl(apt.photo_url).data.publicUrl;
+
+  col.innerHTML = `
+    <article class="listing-card h-100">
+      <img class="listing-img" src="${imageUrl}">
+      <div class="listing-body">
+        <div class="listing-price">${formatPrice(apt.price)}</div>
+        <div class="listing-chips">
+          <span class="chip">${apt.rooms} комн.</span>
+          <span class="chip">${formatArea(apt.area)}</span>
+          <span class="chip">${apt.floor} этаж</span>
+          <span class="chip">${apt.metro_name}</span>
+          <span class="chip">${apt.metro_minutes} мин</span>
         </div>
-      </article>
-    `;
-    return col;
-  };
+        <div class="listing-address">${escapeHtml(apt.address)}</div>
+      </div>
+    </article>
+  `;
+  return col;
+};
 
   const updateLoadMoreState = () => {
     if (!loadMoreBtn) return;
