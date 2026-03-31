@@ -295,7 +295,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     updateLoadMoreState();
   };
 
-  // 🔥 ВОТ ГЛАВНАЯ ФУНКЦИЯ (ФИКС)
+
   const loadMetros = async () => {
     metroSelect.innerHTML = `<option value="">Любое</option>`;
 
@@ -321,7 +321,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     });
   };
 
-  // 🔥 реакция на комнаты
+  
   roomsSelect.addEventListener("change", async () => {
     await loadMetros();
   });
