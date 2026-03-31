@@ -166,11 +166,13 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 })();
 
 (() => {
+  (() => {
   const grid = document.getElementById("apartmentsGrid");
   const loadMoreBtn = document.getElementById("loadMoreBtn");
   const filtersForm = document.getElementById("listingsFilters");
   const resetFiltersBtn = document.getElementById("resetFiltersBtn");
   const metroSelect = document.getElementById("filterMetro");
+  const roomsSelect = document.getElementById("filterRooms");
 
   if (!grid) return;
 
@@ -350,40 +352,28 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     };
   };
 
-  if (loadMoreBtn) {
-    loadMoreBtn.addEventListener("click", () => loadApartments());
-  }
-
-  if (filtersForm) {
-    filtersForm.addEventListener("submit", (event) => {
-      event.preventDefault();
-      applyFilters();
-      loadApartments({ reset: true });
-    });
-  }
-
-  if (resetFiltersBtn && filtersForm) {
-    resetFiltersBtn.addEventListener("click", () => {
-      filtersForm.reset();
-      activeFilters = {
-        rooms: "",
-        metro: "",
-      };
-      loadApartments({ reset: true });
-    });
-  }
-
-  updateLoadMoreState();
-  loadApartments({ reset: true });
-
+  //  загрузка метро с учетом rooms
   const loadMetros = async () => {
     if (!metroSelect) return;
-    const { data, error } = await supabase
+
+    metroSelect.innerHTML = `<option value="">Любое</option>`;
+
+    let query = supabase
       .from("apartments")
-      .select("metro_name")
-      .order("metro_name", { ascending: true });
+      .select("metro_name");
+
+    if (activeFilters.rooms) {
+      if (activeFilters.rooms === "4") {
+        query = query.gte("rooms", 4);
+      } else {
+        query = query.eq("rooms", Number(activeFilters.rooms));
+      }
+    }
+
+    const { data, error } = await query;
 
     if (error || !data) return;
+
     const unique = Array.from(
       new Set(
         data
@@ -400,7 +390,38 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     });
   };
 
-  loadMetros();
+  
+  if (roomsSelect) {
+    roomsSelect.addEventListener("change", async () => {
+      activeFilters.rooms = roomsSelect.value;
+      await loadMetros();
+    });
+  }
+
+  if (loadMoreBtn) {
+    loadMoreBtn.addEventListener("click", () => loadApartments());
+  }
+
+  if (filtersForm) {
+    filtersForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      applyFilters();
+      loadApartments({ reset: true });
+    });
+  }
+
+  if (resetFiltersBtn && filtersForm) {
+    resetFiltersBtn.addEventListener("click", async () => {
+      filtersForm.reset();
+      activeFilters = { rooms: "", metro: "" };
+      await loadMetros(); 
+      loadApartments({ reset: true });
+    });
+  }
+
+  updateLoadMoreState();
+  loadApartments({ reset: true });
+  loadMetros(); 
 })();
 
 (() => {
