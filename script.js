@@ -268,6 +268,14 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     loadMoreBtn.style.display = hasMore ? "inline-block" : "none";
   };
 
+  const getRoomsFilterValue = () => {
+    return roomsSelect ? safeText(roomsSelect.value).trim() : "";
+  };
+
+  const getMetroFilterValue = () => {
+    return metroSelect ? safeText(metroSelect.value).trim() : "";
+  };
+
   const buildQuery = (from, to) => {
     let query = supabase
       .from("apartments")
@@ -284,7 +292,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
 
     if (activeFilters.metro) {
-      query = query.ilike("metro_name", `%${activeFilters.metro}%`);
+      query = query.eq("metro_name", activeFilters.metro);
     }
 
     return query;
@@ -339,33 +347,30 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   };
 
   const applyFilters = () => {
-    if (!filtersForm) return;
-
-    const formData = new FormData(filtersForm);
-    const rooms = safeText(formData.get("rooms")).trim();
-    const metro = safeText(formData.get("metro")).trim();
-
     activeFilters = {
-      rooms,
-      metro,
+      rooms: getRoomsFilterValue(),
+      metro: getMetroFilterValue(),
     };
   };
 
-  //  загрузка метро с учетом rooms
   const loadMetros = async () => {
     if (!metroSelect) return;
+
+    const selectedMetro = metroSelect.value;
+    const roomsValue = getRoomsFilterValue();
 
     metroSelect.innerHTML = `<option value="">Любое</option>`;
 
     let query = supabase
       .from("apartments")
-      .select("metro_name");
+      .select("metro_name")
+      .order("metro_name", { ascending: true });
 
-    if (activeFilters.rooms) {
-      if (activeFilters.rooms === "4") {
+    if (roomsValue) {
+      if (roomsValue === "4") {
         query = query.gte("rooms", 4);
       } else {
-        query = query.eq("rooms", Number(activeFilters.rooms));
+        query = query.eq("rooms", Number(roomsValue));
       }
     }
 
@@ -387,12 +392,13 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       option.textContent = name;
       metroSelect.appendChild(option);
     });
+
+    const hasSelectedMetro = unique.includes(selectedMetro);
+    metroSelect.value = hasSelectedMetro ? selectedMetro : "";
   };
 
-  
   if (roomsSelect) {
     roomsSelect.addEventListener("change", async () => {
-      activeFilters.rooms = roomsSelect.value;
       await loadMetros();
     });
   }
@@ -402,25 +408,29 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
 
   if (filtersForm) {
-    filtersForm.addEventListener("submit", (event) => {
+    filtersForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       applyFilters();
-      loadApartments({ reset: true });
+      await loadApartments({ reset: true });
     });
   }
 
   if (resetFiltersBtn && filtersForm) {
     resetFiltersBtn.addEventListener("click", async () => {
       filtersForm.reset();
-      activeFilters = { rooms: "", metro: "" };
-      await loadMetros(); 
-      loadApartments({ reset: true });
+      activeFilters = {
+        rooms: "",
+        metro: "",
+      };
+      await loadMetros();
+      await loadApartments({ reset: true });
     });
   }
 
   updateLoadMoreState();
+  loadMetros();
+  applyFilters();
   loadApartments({ reset: true });
-  loadMetros(); 
 })();
 
 (() => {
