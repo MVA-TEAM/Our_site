@@ -218,48 +218,23 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const col = document.createElement("div");
     col.className = "col-12 col-md-6 col-lg-4";
 
-    const rooms = safeText(apt.rooms, "—");
-    const area = formatArea(apt.area);
-    const floor = safeText(apt.floor, "—");
-    const metroName = safeText(apt.metro_name, "");
-    const metroMinutes = safeText(apt.metro_minutes, "");
-    const price = formatPrice(apt.price);
-    const address = safeText(apt.address, "");
-    const photoUrl = safeText(apt.photo_url, "");
-
     col.innerHTML = `
       <article class="listing-card h-100">
-        <img class="listing-img" src="${escapeHtml(photoUrl)}" alt="Интерьер квартиры">
+        <img class="listing-img" src="${escapeHtml(apt.photo_url)}">
         <div class="listing-body">
-          <div class="listing-price">${escapeHtml(price)}</div>
+          <div class="listing-price">${formatPrice(apt.price)}</div>
           <div class="listing-chips">
-            <span class="chip">${escapeHtml(rooms)} комн. кв.</span>
-            <span class="chip">${escapeHtml(area)}</span>
-            <span class="chip">${escapeHtml(floor)} этаж</span>
-            <span class="chip">
-              <img class="chip__icon" src="icons/метро.png" alt="">
-              ${escapeHtml(metroName)}
-            </span>
-            <span class="chip">
-              <img class="chip__icon" src="icons/бег.png" alt="">
-              ${escapeHtml(metroMinutes)} мин
-            </span>
+            <span class="chip">${apt.rooms} комн.</span>
+            <span class="chip">${formatArea(apt.area)}</span>
+            <span class="chip">${apt.floor} этаж</span>
+            <span class="chip">${apt.metro_name}</span>
+            <span class="chip">${apt.metro_minutes} мин</span>
           </div>
-          <div class="listing-address">${escapeHtml(address)}</div>
+          <div class="listing-address">${escapeHtml(apt.address)}</div>
         </div>
       </article>
     `;
-
     return col;
-  };
-
-  const showError = (message) => {
-    grid.innerHTML = `
-      <div class="col-12">
-        <p>Ошибка загрузки: ${escapeHtml(message)}</p>
-      </div>
-    `;
-    if (loadMoreBtn) loadMoreBtn.disabled = true;
   };
 
   const updateLoadMoreState = () => {
@@ -268,18 +243,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     loadMoreBtn.style.display = hasMore ? "inline-block" : "none";
   };
 
-  const getRoomsFilterValue = () => {
-    return roomsSelect ? safeText(roomsSelect.value).trim() : "";
-  };
-
-  const getMetroFilterValue = () => {
-    return metroSelect ? safeText(metroSelect.value).trim() : "";
-  };
-
   const buildQuery = (from, to) => {
     let query = supabase
       .from("apartments")
-      .select("photo_url, price, rooms, area, floor, metro_name, metro_minutes, address, created_at")
+      .select("*")
       .order("created_at", { ascending: false })
       .range(from, to);
 
@@ -300,7 +267,6 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   const loadApartments = async ({ reset = false } = {}) => {
     if (isLoading) return;
-    if (!hasMore && !reset) return;
 
     if (reset) {
       offset = 0;
@@ -312,33 +278,16 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     updateLoadMoreState();
 
     const pageSize = getPageSize();
-    const from = offset;
-    const to = offset + pageSize - 1;
-
-    const { data, error } = await buildQuery(from, to);
-
-    if (error) {
-      showError(error.message || "Неизвестная ошибка");
-      isLoading = false;
-      updateLoadMoreState();
-      return;
-    }
+    const { data } = await buildQuery(offset, offset + pageSize - 1);
 
     if (!data || data.length === 0) {
-      if (offset === 0) {
-        grid.innerHTML = `
-          <div class="col-12">
-            <p>По выбранным фильтрам квартир не найдено.</p>
-          </div>
-        `;
-      }
       hasMore = false;
-      isLoading = false;
       updateLoadMoreState();
       return;
     }
 
     data.forEach((apt) => grid.appendChild(renderApartment(apt)));
+
     offset += data.length;
     hasMore = data.length === pageSize;
 
@@ -346,90 +295,55 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     updateLoadMoreState();
   };
 
-  const applyFilters = () => {
-    activeFilters = {
-      rooms: getRoomsFilterValue(),
-      metro: getMetroFilterValue(),
-    };
-  };
-
+  // 🔥 ВОТ ГЛАВНАЯ ФУНКЦИЯ (ФИКС)
   const loadMetros = async () => {
-    if (!metroSelect) return;
-
-    const selectedMetro = metroSelect.value;
-    const roomsValue = getRoomsFilterValue();
-
     metroSelect.innerHTML = `<option value="">Любое</option>`;
 
-    let query = supabase
+    const roomsValue = roomsSelect.value;
+
+    const { data } = await supabase
       .from("apartments")
-      .select("metro_name")
-      .order("metro_name", { ascending: true });
+      .select("metro_name, rooms");
 
-    if (roomsValue) {
-      if (roomsValue === "4") {
-        query = query.gte("rooms", 4);
-      } else {
-        query = query.eq("rooms", Number(roomsValue));
-      }
-    }
+    const filtered = data.filter((row) => {
+      if (!roomsValue) return true;
+      if (roomsValue === "4") return row.rooms >= 4;
+      return row.rooms === Number(roomsValue);
+    });
 
-    const { data, error } = await query;
-
-    if (error || !data) return;
-
-    const unique = Array.from(
-      new Set(
-        data
-          .map((row) => safeText(row.metro_name, "").trim())
-          .filter((name) => name.length > 0)
-      )
-    );
+    const unique = [...new Set(filtered.map((r) => r.metro_name))];
 
     unique.forEach((name) => {
-      const option = document.createElement("option");
-      option.value = name;
-      option.textContent = name;
-      metroSelect.appendChild(option);
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      metroSelect.appendChild(opt);
     });
-
-    const hasSelectedMetro = unique.includes(selectedMetro);
-    metroSelect.value = hasSelectedMetro ? selectedMetro : "";
   };
 
-  if (roomsSelect) {
-    roomsSelect.addEventListener("change", async () => {
-      await loadMetros();
-    });
-  }
+  // 🔥 реакция на комнаты
+  roomsSelect.addEventListener("change", async () => {
+    await loadMetros();
+  });
 
-  if (loadMoreBtn) {
-    loadMoreBtn.addEventListener("click", () => loadApartments());
-  }
+  filtersForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-  if (filtersForm) {
-    filtersForm.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      applyFilters();
-      await loadApartments({ reset: true });
-    });
-  }
+    activeFilters.rooms = roomsSelect.value;
+    activeFilters.metro = metroSelect.value;
 
-  if (resetFiltersBtn && filtersForm) {
-    resetFiltersBtn.addEventListener("click", async () => {
-      filtersForm.reset();
-      activeFilters = {
-        rooms: "",
-        metro: "",
-      };
-      await loadMetros();
-      await loadApartments({ reset: true });
-    });
-  }
+    await loadApartments({ reset: true });
+  });
 
-  updateLoadMoreState();
+  resetFiltersBtn.addEventListener("click", async () => {
+    filtersForm.reset();
+    activeFilters = { rooms: "", metro: "" };
+
+    await loadMetros();
+    await loadApartments({ reset: true });
+  });
+
   loadMetros();
-  applyFilters();
   loadApartments({ reset: true });
 })();
 
