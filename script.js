@@ -218,10 +218,12 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const col = document.createElement("div");
   col.className = "col-12 col-md-6 col-lg-4";
 
-  const imageUrl = supabase
+  const { data } = supabase
     .storage
     .from("apartments_ph")
-    .getPublicUrl(apt.photo_url).data.publicUrl;
+    .getPublicUrl(apt.photo_url);
+
+  const imageUrl = data.publicUrl;
 
   col.innerHTML = `
     <article class="listing-card h-100">
