@@ -166,7 +166,6 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 })();
 
 (() => {
-  (() => {
   const grid = document.getElementById("apartmentsGrid");
   const loadMoreBtn = document.getElementById("loadMoreBtn");
   const filtersForm = document.getElementById("listingsFilters");
