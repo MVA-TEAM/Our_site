@@ -246,8 +246,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   const updateLoadMoreState = () => {
     if (!loadMoreBtn) return;
+    const hasCards = grid && grid.querySelector(".listing-card");
     loadMoreBtn.disabled = isLoading || !hasMore;
-    loadMoreBtn.style.display = hasMore ? "inline-block" : "none";
+    loadMoreBtn.style.display = hasMore && hasCards ? "inline-block" : "none";
   };
 
   const buildQuery = (from, to) => {
@@ -274,6 +275,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   const loadApartments = async ({ reset = false } = {}) => {
     if (isLoading) return;
+    if (!hasMore && !reset) return;
 
     if (reset) {
       offset = 0;
@@ -284,22 +286,39 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     isLoading = true;
     updateLoadMoreState();
 
-    const pageSize = getPageSize();
-    const { data } = await buildQuery(offset, offset + pageSize - 1);
+    try {
+      const pageSize = getPageSize();
+      const from = offset;
+      const to = offset + pageSize - 1;
+      const { data, error } = await buildQuery(from, to);
 
-    if (!data || data.length === 0) {
-      hasMore = false;
+      if (error) {
+        showError(error.message || "Неизвестная ошибка");
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        if (offset === 0) {
+          grid.innerHTML = `
+            <div class="col-12">
+              <p>По выбранным фильтрам квартир не найдено.</p>
+            </div>
+          `;
+        }
+        hasMore = false;
+        return;
+      }
+
+      data.forEach((apt) => grid.appendChild(renderApartment(apt)));
+
+      offset += data.length;
+      hasMore = data.length === pageSize;
+    } catch (err) {
+      showError(err?.message || "Неизвестная ошибка");
+    } finally {
+      isLoading = false;
       updateLoadMoreState();
-      return;
     }
-
-    data.forEach((apt) => grid.appendChild(renderApartment(apt)));
-
-    offset += data.length;
-    hasMore = data.length === pageSize;
-
-    isLoading = false;
-    updateLoadMoreState();
   };
 
 
@@ -333,7 +352,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     await loadMetros();
   });
 
-  filtersForm.addEventListener("submit", async (e) => {
+    if (loadMoreBtn) {
+    loadMoreBtn.addEventListener("click", () => loadApartments());
+  }
+filtersForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     activeFilters.rooms = roomsSelect.value;
@@ -483,3 +505,11 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     `;
   });
 })();
+
+
+
+
+
+
+
+

@@ -1,4 +1,4 @@
-@font-face {
+﻿@font-face {
   font-family: "Anticva";
   src: url("Fonts/Anticva-Regular.otf") format("opentype");
   font-weight: 400;
@@ -860,8 +860,8 @@ body {
   .promo-card__image {
     width: clamp(240px, 38vw, 520px);
     margin-right: -40px;
-    margin-top: 68px;
-    margin-bottom: -20px;
+    margin-top: 200px;
+    margin-bottom: 0;
   }
 
   .promo-card__row > [class*="col-"]:nth-child(3) {
@@ -1231,5 +1231,16 @@ body {
   .office-section__title,
   .contact-card__title {
     font-size: clamp(26px, 8vw, 40px);
+  }
+}
+
+
+
+
+
+
+@media (max-width: 1200px) and (min-width: 990px) {
+  .promo-card__image {
+    transform: translateY(50px);
   }
 }
