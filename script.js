@@ -4,6 +4,7 @@ const SUPABASE_URL = "https://vglbaobubaujvbqwdyvb.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_MjKF2P-22ePzCMlppBdvpQ_3K8NKvzQ";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+/* ===== DRAG HERO ===== */
 (() => {
   const viewport = document.querySelector(".hero__cards");
   if (!viewport) return;
@@ -27,13 +28,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   };
 
   const endDrag = () => {
-    if (!isDown) return;
     isDown = false;
     viewport.classList.remove("is-dragging");
     document.body.classList.remove("is-dragging");
   };
-
-  viewport.addEventListener("dragstart", (e) => e.preventDefault());
 
   viewport.addEventListener("mousedown", (e) => {
     if (e.button !== 0) return;
@@ -45,6 +43,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   document.addEventListener("mouseup", endDrag);
 })();
 
+/* ===== APARTMENTS ===== */
 (() => {
   const grid = document.getElementById("apartmentsGrid");
   const loadMoreBtn = document.getElementById("loadMoreBtn");
@@ -58,10 +57,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   let offset = 0;
   let isLoading = false;
   let hasMore = true;
-  let activeFilters = {
-    rooms: "",
-    metro: "",
-  };
+  let activeFilters = { rooms: "", metro: "" };
 
   const getPageSize = () => {
     if (window.innerWidth >= 992) return 6;
@@ -77,17 +73,13 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       .replaceAll('"', "&quot;")
       .replaceAll("'", "&#39;");
 
-  const formatPrice = (value) => {
-    const num = Number(value);
-    return `${num.toLocaleString("ru-RU")} ₽`;
-  };
+  const formatPrice = (value) =>
+    `${Number(value).toLocaleString("ru-RU")} ₽`;
 
-  const formatArea = (value) => {
-    const num = Number(value);
-    return `${num.toLocaleString("ru-RU")} м²`;
-  };
+  const formatArea = (value) =>
+    `${Number(value).toLocaleString("ru-RU")} м²`;
 
-  // 🔥 ВОТ ТУТ УЖЕ ВСЁ ПОФИКШЕНО
+  // ✅ ВОТ ЕДИНСТВЕННОЕ ИЗМЕНЕНИЕ
   const renderApartment = (apt) => {
     const col = document.createElement("div");
     col.className = "col-12 col-md-6 col-lg-4";
@@ -128,11 +120,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       .range(from, to);
 
     if (activeFilters.rooms) {
-      if (activeFilters.rooms === "4") {
-        query = query.gte("rooms", 4);
-      } else {
-        query = query.eq("rooms", Number(activeFilters.rooms));
-      }
+      if (activeFilters.rooms === "4") query = query.gte("rooms", 4);
+      else query = query.eq("rooms", Number(activeFilters.rooms));
     }
 
     if (activeFilters.metro) {
@@ -155,10 +144,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     isLoading = true;
 
     const pageSize = getPageSize();
-    const from = offset;
-    const to = offset + pageSize - 1;
-
-    const { data } = await buildQuery(from, to);
+    const { data } = await buildQuery(offset, offset + pageSize - 1);
 
     if (!data || data.length === 0) {
       hasMore = false;
@@ -169,9 +155,39 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     offset += data.length;
     hasMore = data.length === pageSize;
-
     isLoading = false;
   };
 
+  const loadMetros = async () => {
+    metroSelect.innerHTML = `<option value="">Любое</option>`;
+
+    const { data } = await supabase
+      .from("apartments")
+      .select("metro_name");
+
+    [...new Set(data.map((r) => r.metro_name))].forEach((name) => {
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      metroSelect.appendChild(opt);
+    });
+  };
+
+  loadMoreBtn?.addEventListener("click", () => loadApartments());
+
+  filtersForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    activeFilters.rooms = roomsSelect.value;
+    activeFilters.metro = metroSelect.value;
+    await loadApartments({ reset: true });
+  });
+
+  resetFiltersBtn?.addEventListener("click", async () => {
+    filtersForm.reset();
+    activeFilters = { rooms: "", metro: "" };
+    await loadApartments({ reset: true });
+  });
+
+  loadMetros();
   loadApartments({ reset: true });
 })();
