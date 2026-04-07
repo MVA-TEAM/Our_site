@@ -383,7 +383,7 @@ filtersForm.addEventListener("submit", async (e) => {
   const firstNameInput = document.getElementById("firstName");
   const lastNameInput = document.getElementById("lastName");
   const phoneInput = document.getElementById("phone");
-
+  const PHONE_MAX_LENGTH = 12;
   const normalizeName = (value) => value.trim();
   const normalizePhone = (value) => value.trim();
   const namePattern = /^[A-Za-zА-Яа-яЁё\s-]+$/;
@@ -440,7 +440,12 @@ filtersForm.addEventListener("submit", async (e) => {
     setError(input, "Введите номер в формате +79115556677 или 89115556677");
     return false;
   }
-
+   
+  if (value.length > PHONE_MAX_LENGTH) {
+      setError(input, `Максимум ${PHONE_MAX_LENGTH} цифр`);
+      return false;
+    }
+   
   clearError(input);
   return true;
 };
@@ -467,7 +472,7 @@ filtersForm.addEventListener("submit", async (e) => {
 
   if (phoneInput) {
     phoneInput.addEventListener("input", () => {
-      phoneInput.value = normalizePhone(phoneInput.value);
+      phoneInput.value = normalizePhone(phoneInput.value).slice(0, PHONE_MAX_LENGTH);
       if (phoneInput.classList.contains("is-invalid")) {
         validatePhoneField(phoneInput);
       }
