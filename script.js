@@ -427,7 +427,7 @@ filtersForm.addEventListener("submit", async (e) => {
   };
 
  const validatePhoneField = (input) => {
-  const value = input.value.trim();
+  const value = normalizePhone(input.value);
 
   const phonePattern = /^(\+7|8)\d{10}$/;
 
