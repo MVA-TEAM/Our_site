@@ -385,7 +385,7 @@ filtersForm.addEventListener("submit", async (e) => {
   const phoneInput = document.getElementById("phone");
 
   const normalizeName = (value) => value.trim();
-  const normalizePhone = (value) => value.replace(/\D/g, "").trim();
+  const normalizePhone = (value) => value.trim();
   const namePattern = /^[A-Za-zА-Яа-яЁё\s-]+$/;
 
   const setError = (input, message) => {
@@ -426,19 +426,24 @@ filtersForm.addEventListener("submit", async (e) => {
     return true;
   };
 
-  const validatePhoneField = (input) => {
-    const value = normalizePhone(input.value);
-    if (!value) {
-      setError(input, "Заполните поле");
-      return false;
-    }
-    if (!/^\d+$/.test(value)) {
-      setError(input, "Данное поле может содержать только цифры");
-      return false;
-    }
-    clearError(input);
-    return true;
-  };
+ const validatePhoneField = (input) => {
+  const value = input.value.trim();
+
+  const phonePattern = /^(\+7|8)\d{10}$/;
+
+  if (!value) {
+    setError(input, "Заполните поле");
+    return false;
+  }
+
+  if (!phonePattern.test(value)) {
+    setError(input, "Введите номер в формате +79115556677 или 89115556677");
+    return false;
+  }
+
+  clearError(input);
+  return true;
+};
 
   if (firstNameInput) {
     firstNameInput.addEventListener("input", () => {
